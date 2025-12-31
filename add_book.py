@@ -98,6 +98,14 @@ def fetch_openlibrary_metadata(query: str, books: list) -> dict:
     # store cover at covers
     download_cover(cover_url, cover_path)
 
+    # description and first sentence sometimes come as string sometimes as dict: {value: string}
+    desc = work_data.get("description", "")
+    if isinstance(desc, dict):
+        desc = desc.get("value", "")
+    fs = work_data.get("first_sentence", "")
+    if isinstance(fs, dict):
+        fs = fs.get("value", "")
+
     data = {
         "title": book_search_data.get("title", ""),
         "key": book_search_data.get("key", ""),
@@ -107,8 +115,8 @@ def fetch_openlibrary_metadata(query: str, books: list) -> dict:
         "subjects": ", ".join(work_data.get("subjects", [""])),
         "pages": cover_edition_data.get("pagination", ""),
         "weight": cover_edition_data.get("weight", ""),
-        "description": work_data.get("description", {"value": ""})["value"],
-        "first_sentence": work_data.get("first_sentence", {"value": ""})["value"],
+        "description": desc,
+        "first_sentence": fs,
         "cover_path": cover_path.as_posix(),
     }
 
