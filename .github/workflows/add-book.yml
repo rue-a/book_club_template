@@ -2,7 +2,7 @@ name: Add book from issue
 
 on:
   issues:
-    types: [closed]
+    types: [opened, edited]
 
 jobs:
   add-book:

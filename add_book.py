@@ -43,11 +43,18 @@ def download_cover(url: str, out_path: Path):
     print(f"Saved cover to {out_path}")
 
 
-def fetch_openlibrary_metadata(isbn: str, existing_work_keys: list) -> dict:
+def fetch_openlibrary_metadata(query: str, books: list) -> dict:
     open_library_url = "https://openlibrary.org"
+    existing_queries = [book["query"] for book in books]
+    existing_work_keys = [book["meta"]["key"] for book in books]
+
+    # do not run the same query twice
+    if query in existing_queries:
+        warn(f"The query '{query}' was already queried — skipping.")
+        return False
 
     book_search_response = requests.get(
-        f"{open_library_url}/search.json", params={"q": isbn}, timeout=10
+        f"{open_library_url}/search.json", params={"q": query}, timeout=10
     )
 
     # raise_for_status() throws exception if request failed
@@ -56,6 +63,7 @@ def fetch_openlibrary_metadata(isbn: str, existing_work_keys: list) -> dict:
 
     # check if we found a book (numFound > 0)
     if not book_search_data.get("numFound", False):
+        warn(f"No results found on OpenLibrary for query '{query}'.")
         return False
 
     # data is in the docs attribute
@@ -66,7 +74,7 @@ def fetch_openlibrary_metadata(isbn: str, existing_work_keys: list) -> dict:
 
     # Check for duplicates, stop if book already exists in db
     if work_id in existing_work_keys:
-        print(f"Book with key {work_id} already exists — skipping.")
+        warn(f"Book with key {work_id} already exists — skipping.")
         return False
 
     work_response = requests.get(f"{open_library_url}/{work_id}.json", timeout=10)
@@ -120,10 +128,9 @@ def save_books(books: list) -> None:
 
 def add_book(isbn, proposer, participants, review_date):
     books = load_books()
-    book_keys = [book["meta"]["key"] for book in books]
 
     # Fetch metadata to validate ISBN exists
-    meta = fetch_openlibrary_metadata(isbn, book_keys)
+    meta = fetch_openlibrary_metadata(isbn, books)
 
     if meta:
         ratings = {name: None for name in participants}
@@ -157,15 +164,17 @@ def build_summary(
     including warnings (if any).
     """
 
-    lines = []
+    lines = ["# SUMMARY"]
 
-    # Header
-    lines.append("✅ **Book entry created**\n")
+    if not meta:
+        lines.append("❌ **No book entry created**\n")
+    else:
+        # Header
+        lines.append("✅ **Book entry created**\n")
 
-    # Core info
-    lines.append(f"**Query:** {query}")
+        # Core info
+        lines.append(f"**Query:** {query}")
 
-    if meta:
         title = meta.get("title", "")
         authors = meta.get("authors", "")
         if title:
@@ -173,14 +182,14 @@ def build_summary(
         if authors:
             lines.append(f"**Authors:** {authors}")
 
-    if review_date:
-        lines.append(f"**Review date:** {review_date}")
+        if review_date:
+            lines.append(f"**Review date:** {review_date}")
 
-    if proposer:
-        lines.append(f"**Proposed by:** {proposer}")
+        if proposer:
+            lines.append(f"**Proposed by:** {proposer}")
 
-    if participants:
-        lines.append(f"**Participants:** {', '.join(participants)}")
+        if participants:
+            lines.append(f"**Participants:** {', '.join(participants)}")
 
     # Warnings section
     if warnings:
@@ -189,6 +198,36 @@ def build_summary(
             lines.append(f"- {w}")
 
     return "\n".join(lines)
+
+
+def post_issue_comment(body: str):
+    """
+    Post a comment to the current GitHub issue.
+    """
+    token = os.environ.get("GITHUB_TOKEN")
+    repo = os.environ.get("GITHUB_REPOSITORY")
+    issue_number = os.environ.get("GITHUB_ISSUE_NUMBER")
+
+    if not all([token, repo, issue_number]):
+        print("Missing GitHub context — not posting comment.")
+        return
+
+    url = f"https://api.github.com/repos/{repo}/issues/{issue_number}/comments"
+
+    headers = {
+        "Authorization": f"Bearer {token}",
+        "Accept": "application/vnd.github+json",
+    }
+
+    resp = requests.post(
+        url,
+        headers=headers,
+        json={"body": body},
+        timeout=10,
+    )
+
+    resp.raise_for_status()
+    print("✔ Posted summary comment")
 
 
 def parse_issue():
@@ -256,7 +295,7 @@ def parse_issue():
         try:
             datetime.strptime(review_date, "%Y-%m-%d")
         except ValueError:
-            warn("Review date '{review_date}' is not in YYYY-MM-DD format.")
+            warn(f"Review date '{review_date}' is not in YYYY-MM-DD format.")
 
     # -------------------------------
     # Participants parsing
@@ -285,8 +324,8 @@ def parse_issue():
         warnings=WARNINGS,
     )
 
-    print("\n--- SUMMARY ---\n")
-    print(summary)
+    post_issue_comment(summary)
+    print(f"::notice::{summary}")
 
 
 if __name__ == "__main__":
