@@ -346,4 +346,4 @@ def parse_issue():
 if __name__ == "__main__":
     title_added = parse_issue()
     # Exit code 1 if nothing was added (optional)
-    exit("True" if title_added else "False")
+    exit(0 if title_added else 1)
