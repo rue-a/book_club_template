@@ -156,6 +156,7 @@ def add_book(isbn, proposer, participants, review_date):
 def build_summary(
     *,
     query: str,
+    isbn: str,
     review_date: str,
     proposer: str,
     participants: list[str],
@@ -179,6 +180,7 @@ def build_summary(
         lines.append(f"**Query:** {query}")
 
         title = meta.get("title", "")
+        isbn = f"**ISBN:** {isbn}"
         authors = meta.get("authors", "")
         if title:
             lines.append(f"**Title:** *{title}*")
@@ -269,12 +271,13 @@ def parse_issue():
     # -------------------------------
     # Keep digits and X only (ISBN-10 or 13)
     isbn = re.sub(r"[^0-9X]", "", extract_field(body, "ISBN"))
+    query = isbn
 
     # if isbn is not valid, try with entered title
-    if len(isbn) not in (10, 13):
+    if len(query) not in (10, 13):
         fallback = title.strip()
         warn(f"No valid ISBN detected, trying issue title: `{fallback}`")
-        isbn = fallback
+        query = fallback
 
     # -------------------------------
     # Metadata from body
@@ -322,14 +325,15 @@ def parse_issue():
     # Add book
     # -------------------------------
     book_meta = add_book(
-        isbn=isbn,
+        isbn=query,
         proposer=proposer,
         participants=participants,
         review_date=review_date,
     )
 
     summary = build_summary(
-        query=isbn,
+        query=query,
+        isbn=isbn,
         review_date=review_date,
         proposer=proposer,
         participants=participants,

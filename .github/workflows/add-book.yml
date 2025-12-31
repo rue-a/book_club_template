@@ -73,7 +73,7 @@ jobs:
           git diff --cached --quiet && exit 0
 
           git commit -m "Add book from issue #${{ github.event.issue.number }}"
-          git push origin "$BRANCH"
+          git push --force origin "$BRANCH"
 
       - name: Create PR
         id: pr
