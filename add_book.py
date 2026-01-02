@@ -90,7 +90,7 @@ def fetch_openlibrary_metadata(query: str, books: list) -> dict:
         )
         return False
 
-    work_response = requests.get(f"{open_library_url}/{work_id}.json", timeout=10)
+    work_response = requests.get(f"{OPEN_LIBRARY_URL}/{work_id}.json", timeout=10)
     work_response.raise_for_status()
     work_data = work_response.json()
 
@@ -103,7 +103,7 @@ def fetch_openlibrary_metadata(query: str, books: list) -> dict:
         return False
 
     cover_edition_response = requests.get(
-        f"{open_library_url}/books/{cover_edition_key}.json",
+        f"{OPEN_LIBRARY_URL}/books/{cover_edition_key}.json",
         timeout=10,
     )
     cover_edition_response.raise_for_status()
@@ -193,7 +193,7 @@ def build_summary(
     """
 
     prepared = requests.Request(
-        "GET", OPEN_LIBRARY_URL, params={"q": query, "limit": LIMIT}
+        "GET", f"{OPEN_LIBRARY_URL}/search.json", params={"q": query, "limit": LIMIT}
     ).prepare()
     query_url = prepared.url
 
