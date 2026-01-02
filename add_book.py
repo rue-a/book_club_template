@@ -12,7 +12,8 @@ import requests
 BOOKS_FILE = Path("data/books.json")
 COVERS_PATH = Path("covers")
 WARNINGS = []
-QUERY_URL = None
+OPEN_LIBRARY_URL = "https://openlibrary.org"
+LIMIT = 10
 # -----------------------------------
 
 
@@ -46,7 +47,7 @@ def download_cover(url: str, out_path: Path):
 
 
 def fetch_openlibrary_metadata(query: str, books: list) -> dict:
-    open_library_url = "https://openlibrary.org"
+
     existing_queries = [book["query"] for book in books]
     existing_work_keys = [book["meta"]["key"] for book in books]
 
@@ -56,10 +57,11 @@ def fetch_openlibrary_metadata(query: str, books: list) -> dict:
         return False
 
     search_response = requests.get(
-        f"{open_library_url}/search.json", params={"q": query, "limit": 10}, timeout=10
+        f"{OPEN_LIBRARY_URL}/search.json",
+        params={"q": query, "limit": LIMIT},
+        timeout=10,
     )
-    print(f"Querying: {search_response.url}")
-    QUERY_URL = search_response.url
+    print(f"::notice::Querying: {search_response.url}")
 
     # raise_for_status() throws exception if request failed
     search_response.raise_for_status()
@@ -190,8 +192,13 @@ def build_summary(
     including warnings (if any).
     """
 
+    prepared = requests.Request(
+        "GET", OPEN_LIBRARY_URL, params={"q": query, "limit": LIMIT}
+    ).prepare()
+    query_url = prepared.url
+
     lines = ["# SUMMARY"]
-    lines.append(f"**Query:** {query} ({QUERY_URL})\n\n")
+    lines.append(f"**Query:** {query} ({query_url})\n\n")
 
     if not meta:
         lines.append("❌ **No book entry created**\n")
