@@ -1,6 +1,6 @@
 ---
-name: New book issue template
-about: To create a new database record for the book database.
+name: Add new book
+about: Issue to create a new database record for the book database.
 title: enter-book-title-here
 labels: book
 assignees: ''

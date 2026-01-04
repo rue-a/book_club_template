@@ -96,23 +96,21 @@ def fetch_openlibrary_metadata(query: str, books: list) -> dict:
 
     # the cover edition is the edition (book) used to represent the work
     cover_edition_key = search_data.get("cover_edition_key", False)
-    if not cover_edition_key:
-        warn(
-            "The query yielded no cover edition, thus we probably found a wrong record. Aborting..."
+    cover_edition_data = {}
+    if cover_edition_key:
+        cover_edition_response = requests.get(
+            f"{OPEN_LIBRARY_URL}/books/{cover_edition_key}.json",
+            timeout=10,
         )
-        return False
+        cover_edition_response.raise_for_status()
+        cover_edition_data = cover_edition_response.json()
+        cover_url = f"https://covers.openlibrary.org/b/olid/{cover_edition_key}.jpg"
+        cover_path = COVERS_PATH / f"{cover_edition_key}.jpg"
 
-    cover_edition_response = requests.get(
-        f"{OPEN_LIBRARY_URL}/books/{cover_edition_key}.json",
-        timeout=10,
-    )
-    cover_edition_response.raise_for_status()
-    cover_edition_data = cover_edition_response.json()
-    cover_url = f"https://covers.openlibrary.org/b/olid/{cover_edition_key}.jpg"
-    cover_path = COVERS_PATH / f"{cover_edition_key}.jpg"
-
-    # store cover at covers
-    download_cover(cover_url, cover_path)
+        # store cover at covers
+        download_cover(cover_url, cover_path)
+    else:
+        warn("The query yielded no cover edition data")
 
     # description and first sentence sometimes come as string sometimes as dict: {value: string}
     desc = work_data.get("description", "")
@@ -129,7 +127,7 @@ def fetch_openlibrary_metadata(query: str, books: list) -> dict:
         "first_publish_year": search_data.get("first_publish_year", ""),
         "edition_count": search_data.get("edition_count", ""),
         "subjects": ", ".join(work_data.get("subjects", [""])),
-        "pages": cover_edition_data.get("nb_of_pages", ""),
+        "pages": cover_edition_data.get("number_of_pages", ""),
         "weight": cover_edition_data.get("weight", ""),
         "description": desc,
         "first_sentence": fs,
@@ -374,7 +372,7 @@ def parse_issue():
     return bool(book_meta)
 
 
-if __name__ == "__main__":
-    title_added = parse_issue()
-    # Exit code 1 if nothing was added (optional)
-    exit(0 if title_added else 1)
+# if __name__ == "__main__":
+#     title_added = parse_issue()
+#     # Exit code 1 if nothing was added (optional)
+#     exit(0 if title_added else 1)
