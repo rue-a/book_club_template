@@ -11,10 +11,17 @@ import requests
 # ---------- Configuration ----------
 BOOKS_FILE = Path("data/books.json")
 COVERS_PATH = Path("covers")
+NOTICES = []
 WARNINGS = []
+
 OPEN_LIBRARY_URL = "https://openlibrary.org"
 LIMIT = 10
 # -----------------------------------
+
+
+def notice(msg):
+    print(f"::notice::{msg}")
+    NOTICES.append(msg)
 
 
 def warn(msg):
@@ -51,90 +58,103 @@ def fetch_openlibrary_metadata(query: str, books: list) -> dict:
     existing_queries = [book["query"] for book in books]
     existing_work_keys = [book["meta"]["key"] for book in books]
 
+    # %%
+    fields = [
+        "key",
+        "type",
+        "title",
+        "author_name",
+        "first_publish_year",
+        "first_edition",
+        "number_of_pages_median",
+        "first_sentence",
+        "description",
+        "subject",
+        "edition_count",
+        "id_wikidata",
+        "place",
+        "time",
+        "cover_i",
+    ]
+    # %%
+    params = {"q": query, "limit": LIMIT, "sorts": "editions", "fields": fields}
+
     # do not run the same query twice
     if query in existing_queries:
         warn(f"The query `{query}` was already queried — skipping.")
         return False
 
-    search_response = requests.get(
+    response = requests.get(
         f"{OPEN_LIBRARY_URL}/search.json",
-        params={"q": query, "limit": LIMIT},
+        params=params,
         timeout=10,
     )
-    print(f"::notice::Querying: {search_response.url}")
+    notice(f"Querying: {query} (actual query URL: {response.url})")
 
     # raise_for_status() throws exception if request failed
-    search_response.raise_for_status()
-    search_data = search_response.json()
+    response.raise_for_status()
+    response_data = response.json()
 
     # check if we found a book (numFound > 0)
-    if not search_data.get("numFound", False):
+    if not response_data.get("numFound", False):
         warn(f"No results found on OpenLibrary for query `{query}`.")
         return False
 
-    if search_data["numFound"] > 1:
+    if response_data["numFound"] > 1:
         warn(
-            f"Result is ambigous, {search_data['numFound']} matches found. Selecting match with most editions among the first ten matches."
+            f"Result is ambigous, {response_data['numFound']} matches found. Selecting match with most editions."
         )
 
-    # data is in the docs attribute (find doc with most editions)
-    search_data = max(search_data["docs"], key=lambda d: d["edition_count"])
+    # data is in the docs attribute (we sorted by edition count in the query -> first entry has most editions)
+    response_data = response_data["docs"][0]
+
+    for field in fields:
+        if field not in response_data.keys():
+            notice(f"The field `{field}` yielded no data")
 
     # in open library terms, a work is the sum of all editions
-    work_id = search_data["key"]
+    work_id = response_data["key"]
 
     # Check for duplicates, stop if book already exists in db
     if work_id in existing_work_keys:
         warn(
-            f'A title with key `{work_id}` ({next((item["meta"]["title"] for item in books if item.get("meta", {}).get("key") == "/works/OL27448W"), None)}) already exists — skipping.'
+            f'A work with key `{work_id}` ({next((item["meta"]["title"] for item in books if item.get("meta", {}).get("key") == work_id), None)}) already exists — skipping.'
         )
         return False
 
-    work_response = requests.get(f"{OPEN_LIBRARY_URL}/{work_id}.json", timeout=10)
-    work_response.raise_for_status()
-    work_data = work_response.json()
-
-    # the cover edition is the edition (book) used to represent the work
-    cover_edition_key = search_data.get("cover_edition_key", False)
-    cover_edition_data = {}
-    if cover_edition_key:
-        cover_edition_response = requests.get(
-            f"{OPEN_LIBRARY_URL}/books/{cover_edition_key}.json",
-            timeout=10,
+    cover_path = ""
+    cover_url = ""
+    if "cover_i" in response_data.keys():
+        cover_url = (
+            f"https://covers.openlibrary.org/b/id/{response_data['cover_i']}-M.jpg"
         )
-        cover_edition_response.raise_for_status()
-        cover_edition_data = cover_edition_response.json()
-        cover_url = f"https://covers.openlibrary.org/b/olid/{cover_edition_key}.jpg"
-        cover_path = COVERS_PATH / f"{cover_edition_key}.jpg"
+        cover_path = COVERS_PATH / f"{response_data['cover_i']}.jpg"
 
         # store cover at covers
         download_cover(cover_url, cover_path)
     else:
-        warn("The query yielded no cover edition data")
+        notice("The query yielded no cover image")
 
-    # description and first sentence sometimes come as string sometimes as dict: {value: string}
-    desc = work_data.get("description", "")
-    if isinstance(desc, dict):
-        desc = desc.get("value", "")
-    fs = work_data.get("first_sentence", "")
-    if isinstance(fs, dict):
-        fs = fs.get("value", "")
-
-    data = {
-        "title": search_data.get("title", ""),
-        "key": search_data.get("key", ""),
-        "authors": ", ".join(search_data.get("author_name", [""])),
-        "first_publish_year": search_data.get("first_publish_year", ""),
-        "edition_count": search_data.get("edition_count", ""),
-        "subjects": ", ".join(work_data.get("subjects", [""])),
-        "pages": cover_edition_data.get("number_of_pages", ""),
-        "weight": cover_edition_data.get("weight", ""),
-        "description": desc,
-        "first_sentence": fs,
+    stringified_data = {
+        "key": response_data.get("key", ""),
+        "type": response_data.get("type", ""),
+        "title": response_data.get("title", ""),
+        "authors": ", ".join(response_data.get("author_name", [""])),
+        "first_publish_year": response_data.get("first_publish_year", ""),
+        "first_edition": response_data.get("first_edition", ""),
+        "number_of_pages_median": response_data.get("number_of_pages_median", ""),
+        "first_sentence": response_data.get("first_sentence", [""])[0],
+        "description": response_data.get("description", ""),
+        "subjects": ", ".join(response_data.get("subject", [""])),
+        "edition_count": response_data.get("edition_count", ""),
+        "id_wikidata": response_data.get("id_wikidata", ""),
+        "place": response_data.get("place", ""),
+        "time": response_data.get("time", ""),
         "cover_path": cover_path.as_posix(),
+        "cover_url": cover_url,
     }
 
-    return data
+    return stringified_data
 
 
 def load_books() -> list:
@@ -184,6 +204,7 @@ def build_summary(
     participants: list[str],
     meta: dict | None,
     warnings: list[str],
+    notices: list[str],
 ) -> str:
     """
     Build a human-readable Markdown summary of what happened,
@@ -206,14 +227,13 @@ def build_summary(
 
         # Core info
 
-        title = meta.get("title", "")
-        isbn = f"**ISBN:** {isbn}"
-        authors = meta.get("authors", "")
-        if title:
-            lines.append(f"**Title:** *{title}*")
-        if authors:
-            lines.append(f"**Authors:** {authors}")
+        lines.append("## Metadata")
+        lines.append("### Fetched Data")
 
+        for key, val in meta.items():
+            lines.append(f"**{key}:** {val}")
+
+        lines.append("### Manually Added Data")
         if review_date:
             lines.append(f"**Review date:** {review_date}")
 
@@ -225,9 +245,17 @@ def build_summary(
 
     # Warnings section
     if warnings:
-        lines.append("\n⚠️ **Warnings**")
+        lines.append("\n>[!WARNING] **Warnings**\n>")
+
         for w in warnings:
-            lines.append(f"- {w}")
+            lines.append(f"> - {w}")
+
+    # Warnings section
+    if notices:
+        lines.append("\n>[!NOTE] **Notes**\n>")
+
+        for n in notices:
+            lines.append(f"> - {n}")
 
     return "\n".join(lines)
 
@@ -364,6 +392,7 @@ def parse_issue():
         participants=participants,
         meta=book_meta,
         warnings=WARNINGS,
+        notices=NOTICES,
     )
 
     post_issue_comment(summary)
