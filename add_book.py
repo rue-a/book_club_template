@@ -401,7 +401,7 @@ def parse_issue():
     return bool(book_meta)
 
 
-# if __name__ == "__main__":
-#     title_added = parse_issue()
-#     # Exit code 1 if nothing was added (optional)
-#     exit(0 if title_added else 1)
+if __name__ == "__main__":
+    title_added = parse_issue()
+    # Exit code 1 if nothing was added (optional)
+    exit(0 if title_added else 1)
