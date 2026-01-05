@@ -26,7 +26,6 @@ jobs:
         with:
           script: |
             const labels = [
-              { name: "book", color: "5319e7", description: "Book ingestion issue" },
               { name: "automated", color: "adadad", description: "Automatically merge PRs" }
             ];
 
