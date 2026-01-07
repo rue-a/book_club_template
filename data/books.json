@@ -1,7 +1,7 @@
 [
   {
     "query": "9781035045686",
-    "review_date": "tba",
+    "review_date": "2026-01-08",
     "proposer": "arne",
     "participants": [
       "arne",
@@ -81,7 +81,7 @@
   },
   {
     "query": "Service Model",
-    "review_date": "tba",
+    "review_date": "2025-11-13",
     "proposer": "arne",
     "participants": [
       "arne",
@@ -97,7 +97,7 @@
       "key": "/works/OL145191W",
       "type": "work",
       "title": "Picasso",
-      "authors": "Pablo Picasso, Jean-Louis Andral, Pierre Daix",
+      "authors": "Pablo Picasso, Jean-Louis Andral, and Pierre Daix",
       "first_publish_year": 1926,
       "first_edition": "",
       "number_of_pages_median": 107,

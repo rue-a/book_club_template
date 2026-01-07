@@ -1,0 +1,110 @@
+fetch("data/books.json")
+	.then(r => r.json())
+	.then(renderPage);
+
+function renderPage(books) {
+	const container = document.getElementById("works");
+
+	const title = document.createElement("h1")
+	title.textContent = document.title
+	container.appendChild(title)
+
+	books.forEach(book => {
+		container.appendChild(renderBook(book));
+	});
+}
+
+function renderBook(book) {
+	const section = document.createElement("section");
+
+	// Title
+	const h2 = document.createElement("h2");
+	h2.textContent = book.meta.title
+	section.appendChild(h2);
+
+	const h2_subtitle = document.createElement("p");
+	h2_subtitle.className = "h2subtitle";
+	h2_subtitle.textContent = `by ${book.meta.authors}`;
+	section.appendChild(h2_subtitle)
+
+	// Right margin book cover 
+	if (book.meta.cover_url) {
+
+		const cover_img = document.createElement("span");
+		cover_img.className = "marginnote";
+
+		const img = document.createElement("img");
+		img.src = book.meta.cover_url;
+		img.alt = book.meta.title;
+
+		cover_img.appendChild(img);
+		section.appendChild(cover_img);
+	}
+
+	// metadata in margin note
+
+	const margin_meta = document.createElement("span");
+	margin_meta.className = "marginnote";
+
+	const metaLines = [
+		metaLine("Authors", book.meta.authors),
+		metaLine("Query", book.query),
+		metaLine("Review date", book.review_date),
+		metaLine("Proposed by", book.proposer),
+		metaLine("Participants", join(book.participants)),
+		metaLine("First published", book.meta.first_publish_year),
+		metaLine("Edition count", book.meta.edition_count),
+		metaLine("Number of pages", book.meta.number_of_pages_median),
+		metaLine("Subjects", book.meta.subjects),
+		metaLine("Places", join(book.meta.place)),
+		metaLine("Time", join(book.meta.time)),
+		metaLine("OpenLibrary key", book.meta.key),
+		metaLine("Wikidata ID", join(book.meta.id_wikidata))
+	];
+
+	margin_meta.innerHTML = metaLines.join("");
+
+	section.appendChild(margin_meta);
+
+
+	// first sentence epigraph
+	if (book.meta.first_sentence) {
+		const fs_div = document.createElement("div")
+		fs_div.className = "epigraph"
+		const fs_blockquote = document.createElement("blockquote")
+		const fs_text = document.createElement("p")
+		fs_text.textContent = book.meta.first_sentence
+		const fs_footer = document.createElement("footer")
+		fs_footer.textContent = `first sentence`
+		fs_blockquote.appendChild(fs_text)
+		fs_blockquote.appendChild(fs_footer)
+		fs_div.appendChild(fs_blockquote)
+		section.appendChild(fs_div)
+	}
+
+
+
+
+
+
+
+	// Description (Markdown)
+	if (book.meta.description) {
+		const desc = document.createElement("p");
+		desc.innerHTML = marked.parse(book.meta.description);
+		section.appendChild(desc);
+	}
+
+
+
+	return section;
+}
+
+function metaLine(key, value) {
+	if (!value || value.length === 0) return "";
+	return `<strong>${key}:</strong> ${value}<br>`;
+}
+
+function join(v) {
+	return Array.isArray(v) ? v.join(", ") : v;
+}

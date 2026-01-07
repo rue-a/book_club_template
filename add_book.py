@@ -139,7 +139,7 @@ def fetch_openlibrary_metadata(query: str, books: list) -> dict:
         "key": response_data.get("key", ""),
         "type": response_data.get("type", ""),
         "title": response_data.get("title", ""),
-        "authors": ", ".join(response_data.get("author_name", [""])),
+        "authors": join_and(response_data.get("author_name", [""])),
         "first_publish_year": response_data.get("first_publish_year", ""),
         "first_edition": response_data.get("first_edition", ""),
         "number_of_pages_median": response_data.get("number_of_pages_median", ""),
@@ -155,6 +155,13 @@ def fetch_openlibrary_metadata(query: str, books: list) -> dict:
     }
 
     return stringified_data
+
+
+def join_and(xs, oxford=True):
+    if len(xs) <= 2:
+        return " and ".join(xs)
+    sep = ", and " if oxford else " and "
+    return ", ".join(xs[:-1]) + sep + xs[-1]
 
 
 def load_books() -> list:
