@@ -297,8 +297,8 @@ def add_book(isbn, proposer, participants, review_date):
         new_book = {
             "query": isbn,
             "review_date": review_date,
-            "proposer": proposer,
-            "participants": participants,
+            "proposer": proposer.title(),
+            "participants": [participant.title() for participant in participants],
             "ratings": ratings,
             "meta": meta,
         }
