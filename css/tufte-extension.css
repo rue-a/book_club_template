@@ -1,24 +1,35 @@
-.topbar,
-.bottombar {
-	position: sticky;
+/* Topbar fixed at the top, full width */
+.topbar {
+	position: fixed;
+	top: 0;
 	left: 0;
 	right: 0;
-	padding: 0.75rem 1.5rem;
-	font-size: 1.2rem;
+	height: auto;
 	background: #fffff8;
-	border-bottom: 1px solid #ddd;
-	z-index: 10;
+	/* border-bottom: 1px solid #ddd; */
+	z-index: 1000;
+	width: 87.5%;
+	padding-left: 12.5%;
+	max-width: 1400px;
 }
 
-.topbar {
-	top: 0;
+/* top padding of article = h1 */
+article {
+	/* max topbar heihgt = tufte h1 vertical space (4 + 1.5 + 3.2 rem) */
+	padding-top: 8.7rem;
 }
 
-.bottombar {
-	bottom: 0;
-	border-top: 1px solid #ddd;
-	border-bottom: none;
+
+/* create a span class with h1 properties of tufte css (so we don't use an h1 within header) */
+span.h1 {
+	display: inline-block;
+	font-weight: 400;
+	margin-top: 4rem;
+	margin-bottom: 1.5rem;
+	font-size: 3.2rem;
+	line-height: 1;
 }
+
 
 /* Dark mode support */
 @media (prefers-color-scheme: dark) {
@@ -29,6 +40,7 @@
 		border-color: #333;
 	}
 }
+
 
 
 p.h2subtitle {

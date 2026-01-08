@@ -3,14 +3,17 @@ fetch("data/books.json")
 	.then(renderPage);
 
 function renderPage(books) {
-	const container = document.getElementById("works");
+	const header = document.getElementById("header")
 
-	const title = document.createElement("h1")
+
+	const title = document.createElement("span")
+	title.className = "h1"
 	title.textContent = document.title
-	container.appendChild(title)
+	header.appendChild(title)
 
+	const article = document.getElementById("works");
 	books.forEach(book => {
-		container.appendChild(renderBook(book));
+		article.appendChild(renderBook(book));
 	});
 }
 
