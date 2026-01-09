@@ -52,12 +52,19 @@ p.h2subtitle {
 	line-height: 1;
 }
 
+/* for centering things horizontally */
+.center {
+	margin-left: auto;
+	margin-right: auto;
+}
+
 .latex-table {
 	border-collapse: collapse;
 	/* no spacing between cells */
 	border-spacing: 0;
 	/* extra safety */
-	width: 100%;
+	width: 80%;
+
 	font-family: "Times New Roman", Times, serif;
 	font-size: 1rem;
 	margin-bottom: 1.5rem;

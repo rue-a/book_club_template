@@ -121,9 +121,9 @@ function renderBook(book) {
 	if (ratings_table) {
 		const ratings_title = document.createElement("h3")
 		ratings_title.textContent = "Ratings"
+		ratings_title.className = "center"
 
 		section.appendChild(ratings_title)
-		ratings_table.className = "latex-table"
 		const ratings_table_holder = document.createElement("p")
 		ratings_table_holder.appendChild(ratings_table)
 		section.appendChild(ratings_table_holder)
@@ -173,6 +173,8 @@ function createRatingsTable(ratings, title) {
 	}
 
 	const table = document.createElement("table");
+
+	table.className = "latex-table center"
 	table.style.borderCollapse = "collapse";
 	table.style.marginBottom = "1rem";
 

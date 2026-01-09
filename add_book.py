@@ -10,6 +10,7 @@ import requests
 
 # ---------- Configuration ----------
 BOOKS_FILE = Path("data/books.json")
+CLUB_FILE = Path("data/club.json")
 COVERS_PATH = Path("covers")
 NOTICES = []
 WARNINGS = []
@@ -279,6 +280,14 @@ def load_books() -> list:
         return json.load(f)
 
 
+def load_club() -> list:
+    if not CLUB_FILE.exists():
+        return []
+
+    with CLUB_FILE.open("r", encoding="utf-8") as f:
+        return json.load(f)
+
+
 def save_books(books: list) -> None:
     BOOKS_FILE.parent.mkdir(parents=True, exist_ok=True)
     with BOOKS_FILE.open("w", encoding="utf-8") as f:
@@ -453,7 +462,7 @@ def parse_issue():
     # -------------------------------
     review_date = extract_field(body, "review date")
     proposer = extract_field(body, "proposer")
-    participants_raw = extract_field(body, "participants")
+    guests_raw = extract_field(body, "guests")
 
     # -------------------------------
     # Detect placeholder / defaults
@@ -461,7 +470,7 @@ def parse_issue():
     defaults = {
         "review date": "YYYY-MM-DD",
         "proposer": "namehere",
-        "participants": "namehere, namehere2, namehere3",
+        "guests": "namehere, namehere2, namehere3",
     }
 
     if review_date == defaults["review date"]:
@@ -470,8 +479,9 @@ def parse_issue():
     if proposer == defaults["proposer"]:
         warn("Proposer is still placeholder (`namehere`).")
 
-    if participants_raw == defaults["participants"]:
-        warn("Participants are still placeholder (`p1, p2, p3`).")
+    if guests_raw == defaults["guests"]:
+        warn("Guests are still placeholder, not adding guests.")
+        guests_raw = ""
 
     # -------------------------------
     # Date validation (non-fatal)
@@ -485,7 +495,11 @@ def parse_issue():
     # -------------------------------
     # Participants parsing
     # -------------------------------
-    participants = [p.strip() for p in participants_raw.split(",") if p.strip()]
+
+    club_meta = load_club()
+    participants = [club_meta["permanent_members"]] + [
+        p.strip() for p in guests_raw.split(",") if p.strip()
+    ]
 
     if not participants:
         warn("No participants specified.")
