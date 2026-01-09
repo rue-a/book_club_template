@@ -18,6 +18,8 @@ function renderPage(books) {
 }
 
 function renderBook(book) {
+	console.log(`Printing book section for ${book.meta.title}`)
+
 	const section = document.createElement("section");
 
 
@@ -112,7 +114,10 @@ function renderBook(book) {
 		section.appendChild(desc);
 	}
 
-	const ratings_table = createRatingsTable(book.ratings)
+
+	// Ratings
+
+	const ratings_table = createRatingsTable(book.ratings, book.meta.title)
 	if (ratings_table) {
 		const ratings_title = document.createElement("h3")
 		ratings_title.textContent = "Ratings"
@@ -122,11 +127,11 @@ function renderBook(book) {
 		const ratings_table_holder = document.createElement("p")
 		ratings_table_holder.appendChild(ratings_table)
 		section.appendChild(ratings_table_holder)
-
 	}
 
 
 
+	console.log("")
 	return section;
 }
 
@@ -140,14 +145,31 @@ function join(v) {
 
 
 
-function createRatingsTable(ratings) {
+function createRatingsTable(ratings, title) {
 	/**
  * Creates an HTML table for given ratings.
  * @param {Object} ratings - Object where keys are raters and values are ratings
  * @returns {HTMLTableElement|null} - Table element if ratings exist, otherwise null
  */
+
+	// check for ratings object with content
 	if (!ratings || Object.keys(ratings).length === 0) {
-		return null; // no ratings, return null
+		console.warn(`No ratings found (${title}).`)
+		return false; // no ratings, return null		
+	}
+
+	// only print ratings if everyone has rated the book
+	for (let key of Object.keys(ratings)) {
+
+		if (!(ratings[key])) {
+			console.warn(`Not everyone has rated yet (${title}).`)
+			return false
+		}
+		if (!(Number.isInteger(ratings[key]))) {
+			console.warn(`Ratings contain non-integer values (${title}).`)
+			return false
+		}
+
 	}
 
 	const table = document.createElement("table");

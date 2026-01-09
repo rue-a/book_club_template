@@ -32,8 +32,8 @@
     "review_date": "YYYY-MM-DD",
     "proposer": "namehere",
     "ratings": {
-      "namehere": null,
-      "namehere2": null,
+      "namehere": 4,
+      "namehere2": 2,
       "namehere3": null
     },
     "meta": {
