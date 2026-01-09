@@ -500,7 +500,6 @@ def parse_issue():
     participants = club_meta["permanent_members"] + [
         p.strip() for p in guests_raw.split(",") if p.strip()
     ]
-    warn(participants)
 
     if not participants:
         warn("No participants specified.")
