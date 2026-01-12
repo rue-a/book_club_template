@@ -4,9 +4,9 @@
     "review_date": "2026-01-09",
     "proposer": "Arne",
     "ratings": {
-      "Arne": 5,
-      "Thomas": 9,
-      "Joost": 6
+      "Arne": 13,
+      "Thomas": 11,
+      "Joost": 14
     },
     "meta": {
       "key": "/works/OL37576633W",
@@ -175,9 +175,9 @@
     "review_date": "YYYY-MM-DD",
     "proposer": "Namehere",
     "ratings": {
-      "Member1": null,
-      "Member2": null,
-      "Member3": null
+      "Member1": 8,
+      "Member2": 6,
+      "Member3": 3
     },
     "meta": {
       "key": "/works/OL21698532W",
