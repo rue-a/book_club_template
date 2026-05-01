@@ -186,5 +186,42 @@
             "cover_path": "covers/14572431.jpg",
             "cover_url": "https://covers.openlibrary.org/b/id/14572431-M.jpg"
         }
+    },
+    "OL44370085W": {
+        "query": "OL44370085W",
+        "review_date": "_No response_",
+        "proposer": "Arne",
+        "ratings": {
+            "Thomas": null,
+            "Joost": null,
+            "Arne": null,
+            "_No Response_": null
+        },
+        "reviews": {
+            "Thomas": null,
+            "Joost": null,
+            "Arne": null,
+            "_No Response_": null
+        },
+        "meta": {
+            "key": "/works/OL44370085W",
+            "type": "work",
+            "title": "The Strength of the Few",
+            "authors": "James Islington",
+            "first_publish_year": 2025,
+            "first_edition": "",
+            "number_of_pages_median": 736,
+            "first_sentence": "",
+            "description": "Omne trium perfectum\r\n\r\nThe Hierarchy still call me Vis Telimus. Still hail me as Catenicus. They still, as one, believe they know who I am.\r\n\r\nBut with all that has happened-with what I fear is coming-I am not sure it matters anymore.\r\n\r\nI am no longer one. I won the ludicium and lost everything- and now, impossibly, the ancient device beyond the Labyrinth has replicated me across three separate worlds. A different version of myself in each of Obiteum, Luceum, and Res. Three different bodies, three different lives. I have to hide; fight; play politics. I have to train; trust; lie. I have to kill; heal; prove myself again, and again, and again.\r\n\r\nI am loved, and hated, and entirely alone.\r\n\r\nAbove all, though, I need to find answers before it's too late. To understand the nature of what has happened to me and why.\r\n\r\nI need to find a way to stop the coming Cataclysm, because if all I have learned is true, I may be the only one who can.",
+            "subjects": "",
+            "edition_count": 4,
+            "id_wikidata": [
+                "Q137219256"
+            ],
+            "place": "",
+            "time": "",
+            "cover_path": "covers/15150800.jpg",
+            "cover_url": "https://covers.openlibrary.org/b/id/15150800-M.jpg"
+        }
     }
 }
