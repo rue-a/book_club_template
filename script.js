@@ -1,7 +1,7 @@
 // Returns the formatted average across all fully-rated books.
 function averageOfAllRatings(books, rs) {
 	const allValues = books
-		.filter(book => ratings(book.ratings, book.meta.title, rs))
+		.filter(book => hasRatings(book, rs))
 		.flatMap(book => Object.values(book.ratings));
 
 	if (allValues.length === 0) return "";
@@ -203,12 +203,12 @@ function renderBook(book, club, rs, gradingPopup, averageGradePopup, averageGrad
 	}
 
 	// Optional blocks. Only print ratings and review after the review date
-	const hasRatings = ratings(book.ratings, book.meta.title, rs);
-	const hasReviews = reviews(book.reviews, book.meta.title);
+	const bookHasRatings = hasRatings(book, rs);
+	const bookHasReviews = hasReviews(book);
 
 
 
-	if (hasRatings) {
+	if (bookHasRatings) {
 		// Average rating
 		const average_rating = rs.computeAverage(book.ratings);
 
@@ -249,7 +249,7 @@ function renderBook(book, club, rs, gradingPopup, averageGradePopup, averageGrad
 		section.appendChild(rating_p);
 	}
 
-	if (hasReviews) {
+	if (bookHasReviews) {
 		for (let key of Object.keys(book.reviews)) {
 			if (book.reviews[key]) {
 				const stripMarkdown = (text) => text
@@ -358,7 +358,10 @@ function join(v) {
 }
 
 
-function ratings(ratingsObj, title, rs) {
+function hasRatings(book, rs) {
+	const ratingsObj = book.ratings
+	const title = book.meta.title
+
 	if (!ratingsObj || Object.keys(ratingsObj).length === 0) {
 		console.warn(`No ratings found (${title}).`);
 		return false;
@@ -378,10 +381,11 @@ function ratings(ratingsObj, title, rs) {
 	return true;
 }
 
-function reviews(reviews, title) {
-	// check for review object with content
+function hasReviews(book) {
+	const reviews = book.reviews
+	
 	if (!reviews || Object.keys(reviews).length === 0) {
-		console.warn(`No reviews found (${title}).`)
+		console.warn(`No reviews found (${book.meta.title}).`)
 		return false; // no reviews, return null		
 	}
 
