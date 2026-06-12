@@ -1,6 +1,6 @@
 name: Review book
 description: Issue to add a written review to a book existing in the books database.
-title: "Add review to book: enter-book-title-here"
+title: "Add review to book"
 labels: ["review"]
 body:
   - type: markdown
@@ -12,11 +12,11 @@ body:
         > Submitting a review for a reviewer who has already reviewed this book will **overwrite** the existing review without warning.
 
   - type: input
-    id: book-id
+    id: book_title
     attributes:
-      label: Book ID
-      description: "OpenLibrary key: begins with `OL` and ends with `W`, find it on the right below the cover at https://rue-a.github.io/sff-zirkel/"
-      placeholder: OL...W
+      label: Title
+      description: "Title of the book. You need to spell it correctly. If you are unsure, check https://rue-a.github.io/sff-zirkel/"
+      placeholder: Title
     validations:
       required: true
 

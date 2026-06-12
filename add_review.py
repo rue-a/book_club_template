@@ -41,11 +41,16 @@ def build_summary(
 
     return "\n".join(lines)
 
+def get_book_id_from_title(books, title: str) -> tuple[str, bool]:
+    matching_book_ids = [book_id for book_id, data in books.items() if data.get("meta", {}).get("title") == title]
+    if len(matching_book_ids) != 1:
+        return None, False
+    return matching_book_ids[0], True
 
-def parse_issue():
+def parse_issue() -> bool:
     """
     Parse GitHub issue payload and add a review.
-    Extracts book_id, reviewer, and review text from issue.
+    Extracts book_title, reviewer, and review text from issue.
     """
     warnings = []
     notices = []
@@ -53,12 +58,15 @@ def parse_issue():
     event = load_issue()
     body = event.get("issue", {}).get("body", "")
 
-    fields = extract_issue_fields(body, "book id", "reviewer", "review")
-    book_id = fields["book id"]
+    fields = extract_issue_fields(body, "book_title", "reviewer", "review")
+    title = fields["book_title"]
     reviewer = fields["reviewer"]
     review = fields["review"]
 
     books = load_books(BOOKS_FILE)
+    book_id, found_single_id = get_book_id_from_title(books, title)
+    if not found_single_id:
+        return False
     book, failed = validate_book(
         books=books,
         book_id=book_id,
