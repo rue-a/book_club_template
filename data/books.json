@@ -193,7 +193,7 @@
         "proposer": "Arne",
         "ratings": {
             "Thomas": null,
-            "Joost": null,
+            "Joost": 9,
             "Arne": null
         },
         "reviews": {
