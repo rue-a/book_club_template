@@ -41,6 +41,32 @@ def build_summary(
 
     return "\n".join(lines)
 
+def get_book_id_from_title(books, title: str) -> tuple[str, bool]:
+    from rapidfuzz import process, fuzz
+    # Map titles to book IDs
+    title_to_id = {
+        data.get("meta", {}).get("title", ""): book_id
+        for book_id, data in books.items()
+    }
+
+    if not title_to_id:
+        return None, False
+
+    match = process.extractOne(
+        title,
+        title_to_id.keys(),
+        scorer=fuzz.WRatio
+    )
+
+    if match is None:
+        return None, False
+
+    matched_title, score, _ = match
+
+    if score < 85: # 85 is a somewhat arbitrary threshold
+        return None, False
+
+    return title_to_id[matched_title], True
 
 def parse_issue():
     """
@@ -53,12 +79,27 @@ def parse_issue():
     event = load_issue()
     body = event.get("issue", {}).get("body", "")
 
-    fields = extract_issue_fields(body, "book id", "reviewer", "review")
-    book_id = fields["book id"]
+    books = load_books(BOOKS_FILE)
+
+    fields = extract_issue_fields(body, "book title", "reviewer", "review")
+    title = fields["book title"]
+    book_id, found_book = get_book_id_from_title(books, title)
     reviewer = fields["reviewer"]
     review = fields["review"]
 
-    books = load_books(BOOKS_FILE)
+    if not found_book:
+        warnings.append(f"Book not found for title: {title}")
+        summary = build_summary(
+            book_id="UNKNOWN",
+            reviewer=reviewer,
+            review=review,
+            warnings=warnings,
+            notices=notices,
+            success=False,
+        )
+        post_summary(summary)
+        return False
+
     book, failed = validate_book(
         books=books,
         book_id=book_id,

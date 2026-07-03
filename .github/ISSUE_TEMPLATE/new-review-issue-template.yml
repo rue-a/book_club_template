@@ -12,11 +12,11 @@ body:
         > Submitting a review for a reviewer who has already reviewed this book will **overwrite** the existing review without warning.
 
   - type: input
-    id: book-id
+    id: book-title
     attributes:
-      label: Book ID
-      description: "OpenLibrary key: begins with `OL` and ends with `W`, find it on the right below the cover at https://rue-a.github.io/sff-zirkel/"
-      placeholder: OL...W
+      label: Book Title
+      description: "Enter the book title."
+      placeholder: "e.g. Service Model"
     validations:
       required: true
 
