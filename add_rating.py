@@ -7,41 +7,54 @@ from issue_ingestion import (
     load_issue,
     post_summary,
     save_books,
-    validate_book,
     validate_reviewer,
     warn,
 )
 
+class ParsingError(ValueError):
+    """Raised when a rating cannot be parsed."""
 
-def validate_rating(rating: str, club: dict, warnings: list[str]):
+
+def parse_german_grade(rating: str) -> int:
+    if not (rating.isdigit() and 1 <= int(rating) <= 15):
+        raise ParsingError(
+            f"Rating '{rating}' is not an integer between 1 and 15."
+        )
+    return int(rating)
+
+
+def parse_five_star(rating: str) -> float:
+    try:
+        value = float(rating)
+    except ValueError as exc:
+        raise ParsingError(f"Rating '{rating}' is not a valid number.") from exc
+
+    if not (0.5 <= value <= 5.0 and (value * 2) % 1 == 0):
+        raise ParsingError(
+            f"Rating '{rating}' must be a multiple of 0.5 between 0.5 and 5."
+        )
+
+    return value
+
+
+RATING_PARSERS = {
+    "german_grades": parse_german_grade,
+    "five_stars": parse_five_star,
+}
+
+
+def parse_rating(rating: str, club: dict) -> int | float:
     system_type = club.get("rating_system_id", "german_grades")
 
-    if system_type == "german_grades":
-        if not (rating.isdigit() and 1 <= int(rating) <= 15):
-            warnings.append(
-                warn(f"Rating '{rating}' is not an integer between 1 and 15.")
-            )
-            return None
-        return int(rating)
+    try:
+        parser = RATING_PARSERS[system_type]
+    except KeyError as exc:
+        raise ParsingError(f"Unknown rating system '{system_type}'.") from exc
 
-    if system_type == "five_stars":
-        try:
-            value = float(rating)
-        except ValueError:
-            warnings.append(warn(f"Rating '{rating}' is not a valid number."))
-            return None
-        if not (0.5 <= value <= 5.0 and (value * 2) % 1 == 0):
-            warnings.append(
-                warn(f"Rating '{rating}' must be a multiple of 0.5 between 0.5 and 5.")
-            )
-            return None
-        return value
-
-    warnings.append(warn(f"Unknown rating system type '{system_type}'."))
-    return None
+    return parser(rating)
 
 
-def build_summary(
+def build_rating_summary(
     *,
     book_id: str,
     reviewer: str,
@@ -80,6 +93,7 @@ def parse_issue():
     """
     warnings = []
     notices = []
+    success = True
 
     event = load_issue()
     body = event.get("issue", {}).get("body", "")
@@ -91,28 +105,30 @@ def parse_issue():
 
     books = load_books(BOOKS_FILE)
     club = load_club(CLUB_FILE)
-    book, failed = validate_book(
-        books=books,
-        book_id=book_id,
-        warnings=warnings,
-    )
+
+    book = books.get(book_id)
+    if not book:
+        warnings.append(warn(f"Book id '{book_id}' not found! Aborted."))
+        success = False
 
     if book:
-        failed = (
-            validate_reviewer(
+        if not validate_reviewer(
                 book=book,
                 reviewer=reviewer,
                 participant_field="ratings",
-                warnings=warnings,
-            )
-            or failed
-        )
+            ):
+                warnings.append(warn(f"Reviewer '{reviewer}' was no participant. Aborted."))
+                success = False
 
-    parsed_rating = validate_rating(rating, club, warnings)
+    try:
+        parsed_rating = parse_rating(rating, club, warnings)
+    except ParsingError as e:
+        warnings.append(warn(str(e)))
+        success = False
+        parsed_rating = None # This should not be necessary, but ensures a set variable.
 
-    success = not failed and parsed_rating is not None
 
-    summary = build_summary(
+    summary = build_rating_summary(
         book_id=book_id,
         reviewer=reviewer,
         rating=rating,

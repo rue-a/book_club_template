@@ -5,18 +5,17 @@ from issue_ingestion import (
     load_issue,
     post_summary,
     save_books,
-    validate_book,
     validate_reviewer,
+    warn,
 )
 
 
-def build_summary(
+def build_review_summary(
     *,
     book_id: str,
     reviewer: str,
     review: str,
     warnings: list[str],
-    notices: list[str],
     success: bool,
 ) -> str:
     lines = ["# SUMMARY"]
@@ -32,16 +31,9 @@ def build_summary(
         for warning in warnings:
             lines.append(f"> - {warning}")
 
-    if notices:
-        lines.append("### Notes")
-        lines.append("\n> [!NOTE]\n>")
-
-        for notice in notices:
-            lines.append(f"> - {notice}")
-
     return "\n".join(lines)
 
-def get_book_id_from_title(books, title: str) -> tuple[str, bool]:
+def get_book_id_from_title(books, title: str) -> str:
     from rapidfuzz import process, fuzz
     # Map titles to book IDs
     title_to_id = {
@@ -50,7 +42,7 @@ def get_book_id_from_title(books, title: str) -> tuple[str, bool]:
     }
 
     if not title_to_id:
-        return None, False
+        return None
 
     match = process.extractOne(
         title,
@@ -59,14 +51,14 @@ def get_book_id_from_title(books, title: str) -> tuple[str, bool]:
     )
 
     if match is None:
-        return None, False
+        return None
 
     matched_title, score, _ = match
 
     if score < 85: # 85 is a somewhat arbitrary threshold
-        return None, False
+        return None
 
-    return title_to_id[matched_title], True
+    return title_to_id[matched_title]
 
 def parse_issue():
     """
@@ -74,7 +66,7 @@ def parse_issue():
     Extracts book_id, reviewer, and review text from issue.
     """
     warnings = []
-    notices = []
+    success = True
 
     event = load_issue()
     body = event.get("issue", {}).get("body", "")
@@ -83,58 +75,44 @@ def parse_issue():
 
     fields = extract_issue_fields(body, "book title", "reviewer", "review")
     title = fields["book title"]
-    book_id, found_book = get_book_id_from_title(books, title)
     reviewer = fields["reviewer"]
     review = fields["review"]
 
-    if not found_book:
-        warnings.append(f"Book not found for title: {title}")
-        summary = build_summary(
-            book_id="UNKNOWN",
-            reviewer=reviewer,
-            review=review,
-            warnings=warnings,
-            notices=notices,
-            success=False,
-        )
-        post_summary(summary)
-        return False
 
-    book, failed = validate_book(
-        books=books,
-        book_id=book_id,
-        warnings=warnings,
-    )
+    book_id = get_book_id_from_title(books, title)
+    if not book_id:
+        warnings.append(warn(f"Book not found for title: {title}. Aborted."))
+        success = False
+    
 
+    book = books.get(book_id)
+    if not book:
+        warnings.append(warn(f"Book id '{book_id}' not found! Aborted."))
+        success = False
+    
     if book:
-        failed = (
-            validate_reviewer(
+        if not validate_reviewer(
                 book=book,
                 reviewer=reviewer,
                 participant_field="reviews",
-                warnings=warnings,
-            )
-            or failed
-        )
+            ):
+                warnings.append(warn(f"Reviewer '{reviewer}' was no participant. Aborted."))
+                success = False
 
-    success = not failed
 
-    summary = build_summary(
+    summary = build_review_summary(
         book_id=book_id,
         reviewer=reviewer,
         review=review,
         warnings=warnings,
-        notices=notices,
-        success=success,
+        success=True,
     )
-
     post_summary(summary)
 
     if not success:
         return False
-
+    
     book["reviews"][reviewer] = review
-
     save_books(BOOKS_FILE, books)
 
     return True

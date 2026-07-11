@@ -123,32 +123,11 @@ def post_summary(summary: str) -> None:
 
 
 # ---------- Validation ----------
-def validate_book(
-    *,
-    books: dict,
-    book_id: str,
-    warnings: list[str],
-) -> tuple[dict | None, bool]:
-    book = books.get(book_id)
-    if not book:
-        warnings.append(warn(f"Book id '{book_id}' not found! Exiting."))
-        return None, True
-    return book, False
-
-
 def validate_reviewer(
     *,
     book: dict,
     reviewer: str,
     participant_field: str,
-    warnings: list[str],
 ) -> bool:
     participants = list(book[participant_field].keys())
-    if reviewer not in participants:
-        warnings.append(
-            warn(
-                f"Reviewer '{reviewer}' was no participant ({join_and(participants)})."
-            )
-        )
-        return True
-    return False
+    return reviewer in participants
