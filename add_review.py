@@ -9,6 +9,9 @@ from issue_ingestion import (
     warn,
 )
 
+import os
+import requests
+
 
 def build_review_summary(
     *,
@@ -32,6 +35,7 @@ def build_review_summary(
             lines.append(f"> - {warning}")
 
     return "\n".join(lines)
+
 
 def get_book_id_from_title(books, title: str) -> str:
     from rapidfuzz import process, fuzz
@@ -60,6 +64,24 @@ def get_book_id_from_title(books, title: str) -> str:
 
     return title_to_id[matched_title]
 
+
+def update_issue_title(event, book_title: str, reviewer: str):
+    repo = os.environ["GITHUB_REPOSITORY"]
+    token = os.environ["GITHUB_TOKEN"]
+    issue_number = event["issue"]["number"]
+
+    new_title = f"Review: {book_title} ({reviewer})"
+
+    requests.patch(
+        f"https://api.github.com/repos/{repo}/issues/{issue_number}",
+        headers={
+            "Authorization": f"Bearer {token}",
+            "Accept": "application/vnd.github+json",
+        },
+        json={"title": new_title},
+    ).raise_for_status()
+
+
 def parse_issue():
     """
     Parse GitHub issue payload and add a review.
@@ -74,14 +96,15 @@ def parse_issue():
     books = load_books(BOOKS_FILE)
 
     fields = extract_issue_fields(body, "book title", "reviewer", "review")
-    title = fields["book title"]
+    book_title = fields["book title"]
     reviewer = fields["reviewer"]
     review = fields["review"]
 
+    update_issue_title(event, book_title, reviewer)
 
-    book_id = get_book_id_from_title(books, title)
+    book_id = get_book_id_from_title(books, book_title)
     if not book_id:
-        warnings.append(warn(f"Book not found for title: {title}. Aborted."))
+        warnings.append(warn(f"Book not found for title: {book_title}. Aborted."))
         success = False
     
 
@@ -105,7 +128,7 @@ def parse_issue():
         reviewer=reviewer,
         review=review,
         warnings=warnings,
-        success=True,
+        success=success,
     )
     post_summary(summary)
 
